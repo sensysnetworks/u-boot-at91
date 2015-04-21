@@ -36,6 +36,89 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#ifdef CONFIG_HW_WATCHDOG
+#include <watchdog.h>
+
+void hw_watchdog_reset()
+{
+    static char up = 0;
+
+    at91_set_gpio_value(AT91_PIN_PB18, (up++ & 0x1));
+}
+#endif
+
+#ifdef CONFIG_SENSYS_APCC
+/*
+ * initialize the som-9g20 for apcc.
+ */
+static void apcc_init(void)
+{
+    unsigned int cnt = 10000;
+
+    { /* initialize PCK1 - this is output to the FPGA as clock reference.
+       * select PLLA as clock source (18.432 * 42) and div by 32
+       * 24.192 mHz.
+       */
+	at91_sys_write(AT91_PMC_PCKR(1), AT91_PMC_CSS_PLLA | AT91_PMC_PRES_32);
+
+	/* Enable PCK1 output */
+	at91_sys_write(AT91_PMC_SCER, AT91_PMC_PCK1);
+
+	/* Wait for PCK1 to come ready or timeout */
+	while (cnt-- > 0) {
+	    volatile unsigned long scsr = at91_sys_read(AT91_PMC_SCSR);
+	    if ((scsr & AT91_PMC_PCK1RDY) != 0) {
+		break;
+	    }
+	}
+
+	/* configure PB31 to be used as PCK1 */
+	at91_set_A_periph(AT91_PIN_PB31, 0);
+    }
+
+    { /* initialize sensys fpga */
+
+	/*
+	 * Configure CS0 (Chip Select 0) for FPGA (SMC @ FFFFEC00)
+	 *
+	 * SETUP - 0x1F3F1F3F
+	 * PULSE - 0x403F403F
+	 * CYCLE - 0x013E013E
+	 * MODE  - 0x000F0003
+	 */
+	at91_sys_write(AT91_SMC_SETUP(0),
+		       AT91_SMC_NWESETUP_(4) | AT91_SMC_NCS_WRSETUP_(4) |
+		       AT91_SMC_NRDSETUP_(4) | AT91_SMC_NCS_RDSETUP_(4));
+
+	at91_sys_write(AT91_SMC_PULSE(0),
+		       AT91_SMC_NWEPULSE_(20) | AT91_SMC_NCS_WRPULSE_(20) |
+		       AT91_SMC_NRDPULSE_(22) | AT91_SMC_NCS_RDPULSE_(22));
+
+	at91_sys_write(AT91_SMC_CYCLE(0),
+		       AT91_SMC_NWECYCLE_(35) | AT91_SMC_NRDCYCLE_(29));
+
+	at91_sys_write(AT91_SMC_MODE(0),
+		       AT91_SMC_READMODE | AT91_SMC_WRITEMODE |
+		       AT91_SMC_EXNWMODE_DISABLE |
+		       AT91_SMC_DBW_8 |
+		       AT91_SMC_TDF_(1));
+    }
+
+    {
+	/* to conserve power, disable the AtoD of phy. 
+	 */
+        at91_set_gpio_output(AT91_PIN_PA22, 1);
+    }
+
+#ifdef CONFIG_HW_WATCHDOG
+    {	/* set up watchdog port */
+        at91_set_gpio_output(AT91_PIN_PB18, 1);
+	WATCHDOG_RESET();
+    }
+#endif
+}
+#endif
+
 /* ------------------------------------------------------------------------- */
 /*
  * Miscelaneous platform dependent initialisations
@@ -250,6 +333,10 @@ int board_eth_init(bd_t *bis)
 #ifdef CONFIG_MACB
         rc = macb_eth_initialize(0, (void *)AT91SAM9260_BASE_EMAC, 0x00);
 #endif
+#ifdef CONFIG_SENSYS_APCC
+	apcc_init();
+#endif
+
         return rc;
 }
 

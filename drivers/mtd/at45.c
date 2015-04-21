@@ -21,6 +21,7 @@
 #include <config.h>
 #include <common.h>
 #include <dataflash.h>
+#include <watchdog.h>
 
 /*
  * spi.c API
@@ -493,6 +494,8 @@ AT91S_DataFlashStatus AT91F_DataFlashWrite(AT91PS_DataFlash pDataFlash,
 		size -= pDataFlash->pDevice->pages_size;
 		dest += pDataFlash->pDevice->pages_size;
 		src += pDataFlash->pDevice->pages_size;
+
+		WATCHDOG_RESET();
 	}
 
 	/* If still some bytes to read */

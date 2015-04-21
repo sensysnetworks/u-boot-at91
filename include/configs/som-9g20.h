@@ -26,6 +26,10 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
+#define	CONFIG_SENSYS_APCC
+#define	CONFIG_CMD_SPARTAN
+#define	CONFIG_HW_WATCHDOG
+
 #define	CLK_MODE_DIV1
 #undef	CLK_MODE_DIV2
 #undef	CLK_MODE_DIV4
@@ -87,7 +91,7 @@
 #define CONFIG_CMD_DATE
 
 
-#define CONFIG_BOOTDELAY	3
+#define CONFIG_BOOTDELAY		3
 
 /*
  * BOOTP options
@@ -115,8 +119,6 @@
 
 #define CONFIG_CMD_MMC		1
 #define CONFIG_CMD_WINCE	1
-#define CONFIG_CMD_FAT		1
-#define CONFIG_CMD_EXT2		1
 #define CONFIG_SILENT_CONSOLE	1
 #define CONFIG_SYS_DEVICE_NULLDEV	1
 
@@ -186,7 +188,6 @@
 #define CONFIG_SYS_USB_OHCI_SLOT_NAME		"at91sam9260"
 #define CONFIG_SYS_USB_OHCI_MAX_ROOT_PORTS	2
 #define CONFIG_USB_STORAGE		1
-#define CONFIG_CMD_FAT			1
 
 #define CONFIG_SYS_LOAD_ADDR			0x21000000	/* load address */
 
@@ -210,16 +211,19 @@
 #elif CONFIG_SYS_USE_DATAFLASH_CS1
 
 /* bootstrap + u-boot + env + linux in dataflash on CS1 */
+#define	CONFIG_IPADDR		192.168.5.100
+#define	CONFIG_SERVERIP		192.168.5.1
+
 #define CONFIG_ENV_IS_IN_DATAFLASH	1
 #define CONFIG_SYS_MONITOR_BASE	(CONFIG_SYS_DATAFLASH_LOGIC_ADDR_CS1 + 0x8400)
-#define CONFIG_ENV_OFFSET		0x4200
+#define CONFIG_ENV_OFFSET		0x6300
 #define CONFIG_ENV_ADDR		(CONFIG_SYS_DATAFLASH_LOGIC_ADDR_CS1 + CONFIG_ENV_OFFSET)
-#define CONFIG_ENV_SIZE		0x4200
-#define CONFIG_BOOTCOMMAND	"cp.b 0xD0042000 0x21000000 0x210000; bootm"
-#define CONFIG_BOOTARGS		"console=ttyS0,115200 "			\
-				"root=/dev/mtdblock0 "			\
-				"mtdparts=at91_nand:-(root) "		\
-				"rw rootfstype=jffs2"
+#define CONFIG_ENV_SIZE		0x2100
+#define CONFIG_BOOTCOMMAND	"sboot"
+#define CONFIG_BOOTARGS		"console=ttyS5,115200 "			\
+				"root=/dev/mtdblock1 "			\
+				"mtdparts=atmel_nand:64M(root0),64M(root1),64M(data) " \
+				"ro rootfstype=jffs2"
 
 #else /* CONFIG_USE_NANDFLASH */
 

@@ -214,11 +214,16 @@ static int menukey = 0;
 static __inline__ int abortboot(int bootdelay)
 {
 	int abort = 0;
+	char key[] = "***";
+	char input[sizeof(key) * 2];
+	char *bp = input;
+	int keylen = strlen(key);
 
+	memset(input, '\0', sizeof(input));
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT);
 #else
-	printf("Hit any key to stop autoboot: %2d ", bootdelay);
+	printf("seconds to autoboot: %2d ", bootdelay);
 #endif
 
 #if defined CONFIG_ZERO_BOOTDELAY_CHECK
@@ -240,18 +245,22 @@ static __inline__ int abortboot(int bootdelay)
 
 		--bootdelay;
 		/* delay 100 * 10ms */
-		for (i=0; !abort && i<100; ++i) {
+		for (i=0; !abort && i<250000; ++i) {
 			if (tstc()) {	/* we got a key press	*/
-				abort  = 1;	/* don't auto boot	*/
-				bootdelay = 0;	/* no more delay	*/
-# ifdef CONFIG_MENUKEY
-				menukey = getc();
-# else
-				(void) getc();  /* consume input	*/
-# endif
-				break;
+				int cc = getc();  /* consume input	*/
+
+				if ((bp - input) < sizeof(input)) {
+					*bp++ = cc;
+				}
+				if ((bp - input) < keylen) {
+					continue;
+				} else if (memcmp(key, bp - keylen, keylen) == 0) {
+					abort  = 1;	/* don't auto boot	*/
+					bootdelay = 0;	/* no more delay	*/
+					break;
+				}
 			}
-			udelay(10000);
+			udelay(4);
 		}
 
 		printf("\b\b\b%2d ", bootdelay);

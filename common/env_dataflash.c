@@ -51,6 +51,46 @@ void env_relocate_spec (void)
 	read_dataflash(CONFIG_ENV_ADDR, CONFIG_ENV_SIZE, (char *)env_ptr);
 }
 
+const char * env_read_backup_mac(void)
+{
+  	static char ethaddr[18];
+  	char buf[CONFIG_ENV_SIZE];
+	char *bp = &buf[4];
+	char *ep = &buf[CONFIG_ENV_SIZE];
+	const char * np = 0L;
+	const char * vp = 0L;
+
+	read_dataflash(CONFIG_ENV_ADDR - 0x2100, CONFIG_ENV_SIZE, buf);
+	while (ep > bp) {
+	  	np = bp;
+		vp = 0L;
+
+		/* get name */
+		while (*bp != '\0' && *bp != '=') {
+		  	bp++;
+		}
+		if (np == bp) {
+		  	break;
+		}
+		*bp = '\0';
+
+		/* get value */
+		vp = ++bp;
+		while (*bp != '\0') {
+		  	bp++;
+		}
+
+		if (strncmp(np, "ethaddr", 7) == 0) {
+		  	if (strlen(vp) == (sizeof(ethaddr) - 1)) {
+			  	strcpy(ethaddr, vp);
+				return ethaddr;
+			}
+		}
+		bp++;
+	}
+	return 0L;
+}
+
 int saveenv(void)
 {
 	/* env must be copied to do not alter env structure in memory*/

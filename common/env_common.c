@@ -229,6 +229,8 @@ void set_default_env(void)
 
 void env_relocate (void)
 {
+  	unsigned char initEthAddr = 0;
+
 	DEBUGF ("%s[%d] offset = 0x%lx\n", __FUNCTION__,__LINE__,
 		gd->reloc_off);
 
@@ -259,6 +261,7 @@ void env_relocate (void)
 		show_boot_progress (-60);
 #endif
 		set_default_env();
+		initEthAddr = 1;
 	}
 	else {
 		env_relocate_spec ();
@@ -268,6 +271,18 @@ void env_relocate (void)
 #ifdef CONFIG_AMIGAONEG3SE
 	disable_nvram();
 #endif
+
+	if (initEthAddr) {
+	  	const char * ethaddr = getenv("ethaddr");
+
+		if (ethaddr == 0L) {
+		  	extern const char * env_read_backup_mac(void );
+			ethaddr = env_read_backup_mac();
+			if (ethaddr != 0L && strlen(ethaddr) == 17) {
+			  	setenv("ethaddr", ethaddr);
+			}
+		}
+	}
 }
 
 #ifdef CONFIG_AUTO_COMPLETE

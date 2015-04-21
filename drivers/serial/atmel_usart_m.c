@@ -121,7 +121,8 @@ void serial_puts_dev(unsigned int dev_index, const char *s)
 int serial_getc_dev(unsigned int dev_index)
 {
 	while (!(usart_readl(dev_index, USART3_CSR) & USART3_BIT(RXRDY)))
-		 WATCHDOG_RESET();
+	  	;
+	WATCHDOG_RESET();
 	return usart_readl(dev_index, USART3_RHR);
 }
 
